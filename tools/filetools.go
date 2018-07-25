@@ -79,7 +79,25 @@ func RenameFileCopyPermissions(srcfile, destfile string) error {
 	}
 
 	if err := os.Rename(srcfile, destfile); err != nil {
-		return fmt.Errorf("cannot replace %q with %q: %v", destfile, srcfile, err)
+		r, err2 := os.Open(srcfile)
+		if err2 != nil {
+			return fmt.Errorf("cannot replace %q with %q: %v", destfile, srcfile, err)
+		}
+		defer r.Close()
+
+		w, err2 := os.Create(destfile)
+		if err2 != nil {
+			return fmt.Errorf("cannot replace %q with %q: %v", destfile, srcfile, err)
+		}
+		defer w.Close()
+
+		// do the actual work
+		_, err2 = io.Copy(w, r)
+		if err2 != nil {
+			return fmt.Errorf("cannot replace %q with %q: %v", destfile, srcfile, err)
+		}
+		// clean up
+		err = os.Remove(srcfile)
 	}
 	return nil
 }

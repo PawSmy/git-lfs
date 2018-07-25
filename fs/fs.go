@@ -36,6 +36,7 @@ type Filesystem struct {
 	GitStorageDir string   // parent of objects/lfs (may be same as GitDir but may not)
 	LFSStorageDir string   // parent of lfs objects and tmp dirs. Default: ".git/lfs"
 	ReferenceDirs []string // alternative local media dirs (relative to clone reference repo)
+	LFSObjectsDir string
 	lfsobjdir     string
 	tmpdir        string
 	logdir        string
@@ -132,7 +133,7 @@ func (f *Filesystem) LFSObjectDir() string {
 	defer f.mu.Unlock()
 
 	if len(f.lfsobjdir) == 0 {
-		f.lfsobjdir = filepath.Join(f.LFSStorageDir, "objects")
+		f.lfsobjdir = filepath.Join(f.LFSObjectsDir, "objects")
 		os.MkdirAll(f.lfsobjdir, 0755)
 	}
 
@@ -173,7 +174,7 @@ func (f *Filesystem) Cleanup() error {
 // New initializes a new *Filesystem with the given directories. gitdir is the
 // path to the bare repo, workdir is the path to the repository working
 // directory, and lfsdir is the optional path to the `.git/lfs` directory.
-func New(env Environment, gitdir, workdir, lfsdir string) *Filesystem {
+func New(env Environment, gitdir, workdir, lfsdir string, objdir string) *Filesystem {
 	fs := &Filesystem{
 		GitStorageDir: resolveGitStorageDir(gitdir),
 	}
@@ -188,6 +189,16 @@ func New(env Environment, gitdir, workdir, lfsdir string) *Filesystem {
 		fs.LFSStorageDir = lfsdir
 	} else {
 		fs.LFSStorageDir = filepath.Join(fs.GitStorageDir, lfsdir)
+	}
+
+	if len(objdir) == 0 {
+		fs.LFSObjectsDir = "lfs"
+	}
+
+	if filepath.IsAbs(objdir) {
+		fs.LFSObjectsDir = objdir
+	} else {
+		fs.LFSObjectsDir = filepath.Join(fs.GitStorageDir, objdir)
 	}
 
 	return fs

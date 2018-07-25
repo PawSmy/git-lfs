@@ -358,11 +358,13 @@ func (c *Configuration) Filesystem() *fs.Filesystem {
 
 	if c.fs == nil {
 		lfsdir, _ := c.Git.Get("lfs.storage")
+		objdir, _ := c.Git.Get("lfs.objectDir")
 		c.fs = fs.New(
 			c.Os,
 			c.LocalGitDir(),
 			c.LocalWorkingDir(),
 			lfsdir,
+			objdir,
 		)
 	}
 
